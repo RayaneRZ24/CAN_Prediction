@@ -77,8 +77,26 @@ def prepare_match_features(team_A, team_B, current_elo_ratings, mean_points, is_
                      columns=['elo_diff', 'points_diff', 'home_adv'])
     return X
 
+def simulate_score(winner, team_A, team_B):
+    """Simule un score réaliste basé sur le vainqueur."""
+    if winner == "Draw":
+        goals = np.random.choice([0, 1, 2, 3], p=[0.35, 0.4, 0.2, 0.05])
+        return goals, goals
+    
+    # Le perdant marque peu de buts généralement
+    loser_goals = np.random.choice([0, 1, 2], p=[0.6, 0.3, 0.1])
+    
+    # Le vainqueur marque au moins 1 but de plus
+    margin = np.random.choice([1, 2, 3, 4], p=[0.55, 0.3, 0.1, 0.05])
+    winner_goals = loser_goals + margin
+    
+    if winner == team_A:
+        return winner_goals, loser_goals
+    else:
+        return loser_goals, winner_goals
+
 def predict_match_result(model, team_A, team_B, current_elo_ratings, mean_points, is_neutral=1):
-    """Prédit le résultat d'un match et retourne le résultat réel (par probabilité)."""
+    """Prédit le résultat d'un match et retourne le résultat réel (par probabilité) et le score."""
     
     X = prepare_match_features(team_A, team_B, current_elo_ratings, mean_points, is_neutral)
     
@@ -91,13 +109,21 @@ def predict_match_result(model, team_A, team_B, current_elo_ratings, mean_points
     # 3. Tirage aléatoire pondéré par les probabilités
     result = np.random.choice(labels, p=proba)
     
-    # 4. Déterminer le vainqueur pour l'attribution des points
+    winner = "Draw"
+    prob_win = proba[1]
+    
+    # 4. Déterminer le vainqueur
     if result == 1.0:
-        return (team_A, proba[2]) # Victoire A
+        winner = team_A
+        prob_win = proba[2]
     elif result == -1.0:
-        return (team_B, proba[0]) # Victoire B
-    else:
-        return ("Draw", proba[1]) # Nul
+        winner = team_B
+        prob_win = proba[0]
+        
+    # 5. Simuler le score
+    score_A, score_B = simulate_score(winner, team_A, team_B)
+    
+    return winner, prob_win, score_A, score_B
     
     
 # --- 3. Simulation de la Phase de Groupes ---
@@ -123,25 +149,19 @@ def simulate_group_phase(model, current_elo_ratings, mean_points):
                 
                 is_neutral = 0 if team_A == 'Morocco' or team_B == 'Morocco' else 1
                 
-                # Prédiction du vainqueur
-                winner, proba = predict_match_result(model, team_A, team_B, current_elo_ratings, mean_points, is_neutral)
+                # Prédiction du vainqueur et du score
+                winner, proba, score_A, score_B = predict_match_result(model, team_A, team_B, current_elo_ratings, mean_points, is_neutral)
 
-                # Simuler un score pour les buts (simplifié : 1-0, 0-1, 1-1)
-                score_A, score_B = random.randint(0, 3), random.randint(0, 3) 
-                
                 # Attribuer les points et les statistiques
                 if winner == team_A: # Victoire A
-                    score_A, score_B = 1, 0
                     group_standings[team_A]['Pts'] += 3
                     group_standings[team_A]['W'] += 1
                     group_standings[team_B]['L'] += 1
                 elif winner == team_B: # Victoire B
-                    score_A, score_B = 0, 1
                     group_standings[team_B]['Pts'] += 3
                     group_standings[team_B]['W'] += 1
                     group_standings[team_A]['L'] += 1
                 else: # Match Nul
-                    score_A, score_B = 1, 1
                     group_standings[team_A]['Pts'] += 1
                     group_standings[team_B]['Pts'] += 1
                     group_standings[team_A]['D'] += 1
@@ -284,8 +304,9 @@ def simulate_knockout(r16_matchs_structured, model, current_elo_ratings, mean_po
             # Gestion du cas "Bye" si moins de 4 troisièmes se qualifient (ne devrait pas arriver ici)
             if team_A == "Bye" or team_B == "Bye":
                 winner = team_A if team_A != "Bye" else team_B
+                print(f"  {team_A} vs {team_B} -> {winner} avance (Bye)")
             else:
-                winner, proba = predict_match_result(model, team_A, team_B, current_elo_ratings, mean_points, is_neutral=1)
+                winner, proba, score_A, score_B = predict_match_result(model, team_A, team_B, current_elo_ratings, mean_points, is_neutral=1)
                 
                 # Gestion du match nul en KO (victoire du favori ELO)
                 if winner == "Draw":
@@ -298,14 +319,17 @@ def simulate_knockout(r16_matchs_structured, model, current_elo_ratings, mean_po
                         winner = team_B
                     else: 
                         winner = random.choice([team_A, team_B])
+                    
+                    print(f"  {team_A} vs {team_B} -> {score_A}-{score_B} (Vainqueur aux t.a.b: {winner})")
+                else:
+                    print(f"  {team_A} vs {team_B} -> {score_A}-{score_B} (Vainqueur: {winner})")
             
             knockout_results.append({
                 'Tour': round_name,
                 'Match': f'{team_A} vs {team_B}',
-                'Vainqueur': winner
+                'Vainqueur': winner,
+                'Score': f"{score_A}-{score_B}"
             })
-            # Affichage en liste de progression
-            print(f"  {team_A} vs {team_B} -> Vainqueur: {winner}")
             
             next_round_teams.append(winner)
 
@@ -347,7 +371,11 @@ def main():
     df_standings, qualified_teams_ordered, r16_matchs_structured = simulate_group_phase(model, current_elo_ratings, mean_points)
     
     print("\n--- CLASSEMENT FINAL DES GROUPES (Pts, Diff. Buts) ---")
-    print(df_standings[['Group', 'team', 'Pts', 'GD', 'GF', 'GA']].to_string(index=False))
+    for group_name in sorted(df_standings['Group'].unique()):
+        print(f"\n--- GROUPE {group_name} ---")
+        group_df = df_standings[df_standings['Group'] == group_name]
+        # On cache la colonne Group car elle est dans le titre
+        print(group_df[['team', 'Pts', 'GD', 'GF', 'GA']].to_string(index=False))
     
     print("\n--- ÉQUIPES QUALIFIÉES POUR LES HUITIÈMES (16) ---")
     print(f"L'ordre des équipes ci-dessous correspond à l'appariement du bracket R16:")
