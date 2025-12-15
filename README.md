@@ -13,6 +13,24 @@ PredictCAN est un projet de prédiction des résultats de la Coupe d'Afrique des
 - **Interface Web Interactive** : Application Streamlit pour visualiser les simulations, prédire des matchs et explorer les statistiques.
 - **Visualisation** : Graphiques et visualisations pour analyser les performances des équipes et les prédictions.
 
+## Aperçu de l'Interface
+
+Voici un aperçu de l'application Streamlit :
+
+### Page d'Accueil et Simulation
+![Simulation](assets/simulation_preview_01.png)
+![Simulation](assets/simulation_preview_02.png)
+*Simulation complète du tournoi avec résultats des groupes et phase finale.*
+
+### Prédiction de Match
+![Prediction](assets/prediction_preview.png)
+*Prédiction détaillée d'un match avec probabilités et score estimé.*
+
+### Statistiques ELO
+![Stats](assets/stats_preview_01.png)
+![Stats](assets/stats_preview_02.png)
+*Classement et historique ELO des équipes africaines.*
+
 ## Structure du Projet
 
 - `app.py` : Application web Streamlit pour l'interface utilisateur.
@@ -29,7 +47,7 @@ PredictCAN est un projet de prédiction des résultats de la Coupe d'Afrique des
 
 1. Clonez le dépôt :
    ```
-   git clone https://github.com/votre-nom-utilisateur/PredictCAN.git
+   git clone https://github.com/RayaneRZ24/PredictCAN.git
    cd PredictCAN
    ```
 
