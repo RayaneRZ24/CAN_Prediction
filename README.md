@@ -11,18 +11,28 @@ PredictCAN est un projet de prédiction des résultats de la Coupe d'Afrique des
 - **Prédiction** : Prédiction des scores et des vainqueurs pour des matchs spécifiques.
 - **Simulation de Tournoi** : Simulation complète d'un tournoi de la CAN avec des prédictions pour chaque phase.
 - **Interface Web Interactive** : Application Streamlit pour visualiser les simulations, prédire des matchs et explorer les statistiques.
+- **Visualisation de l'Arbre du Tournoi** : Affichage interactif du bracket de la phase finale.
+- **Gestion des Prolongations et Tirs au But** : Simulation réaliste des matchs nuls en phase éliminatoire.
 - **Visualisation** : Graphiques et visualisations pour analyser les performances des équipes et les prédictions.
+
+## Méthodologie
+
+Ce projet adopte une approche **Data-Driven** :
+
+1.  **Feature Engineering** : Utilisation de l'algorithme **ELO** pour classer dynamiquement les équipes en fonction de leur historique. Intégration des points FIFA et de l'avantage du terrain.
+2.  **Modélisation** : Entraînement d'un modèle de **Régression Logistique** sur des décennies de matchs pour estimer les probabilités de victoire, nul ou défaite.
+3.  **Simulation** : Utilisation de méthodes de Monte Carlo (tirages aléatoires pondérés par les probabilités) pour simuler le déroulement du tournoi.
 
 ## Aperçu de l'Interface
 
 Voici un aperçu de l'application Streamlit :
 
-### Page d'Accueil et Simulation
+### Page d'Accueil et Simulation du Tournoi
 ![Simulation](assets/simulation_preview_01.png)
 ![Simulation](assets/simulation_preview_02.png)
 *Simulation complète du tournoi avec résultats des groupes et phase finale.*
 
-### Prédiction de Match
+### Prédiction de Match Spécifique
 ![Prediction](assets/prediction_preview.png)
 *Prédiction détaillée d'un match avec probabilités et score estimé.*
 
@@ -40,7 +50,7 @@ Voici un aperçu de l'application Streamlit :
   - `processed/` : Données nettoyées et préparées pour la modélisation.
 - `models/` : Modèles de machine learning sauvegardés (joblib, pickle).
 - `notebooks/` : Jupyter notebooks pour l'analyse, la modélisation et la visualisation.
-- `scripts/` : Scripts Python pour le nettoyage des données, le calcul des classements ELO et la simulation de tournois.
+- `scripts/` : Scripts Python pour le calcul des classements ELO, la simulation de tournois et la visualisation des brackets.
 - `requirements.txt` : Liste des dépendances Python.
 
 ## Installation
@@ -64,32 +74,27 @@ Voici un aperçu de l'application Streamlit :
 
 ## Utilisation
 
-1. **Nettoyage des Données** :
-   ```
-   python scripts/data_cleaning.py
-   ```
-
-2. **Calcul des Classements ELO** :
+1. **Calcul des Classements ELO** :
    ```
    python scripts/elo_ranking.py
    ```
 
-3. **Simulation d'un Tournoi** :
+2. **Simulation d'un Tournoi** :
    ```
    python scripts/simulate_tournament.py
    ```
 
-4. **Exécution du Script Principal (CLI)** :
+3. **Exécution du Script Principal (CLI)** :
    ```
    python main.py
    ```
 
-5. **Lancement de l'Application Web** :
+4. **Lancement de l'Application Web** :
    ```
    streamlit run app.py
    ```
 
-6. **Exploration avec les Notebooks** : Ouvrez les notebooks dans Jupyter pour analyser les données et visualiser les résultats.
+5. **Exploration avec les Notebooks** : Ouvrez les notebooks dans Jupyter pour analyser les données et visualiser les résultats.
 
 ## Technologies Utilisées
 
