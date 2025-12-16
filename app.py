@@ -11,6 +11,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), 'scripts'))
 
 try:
     from simulate_tournament import load_data, simulate_group_phase, simulate_knockout, predict_match_result, prepare_match_features
+    from bracket_viz import display_bracket
 except ImportError:
     st.error("Impossible d'importer les scripts de simulation. Vérifiez la structure du projet.")
 
@@ -98,15 +99,20 @@ def main():
             
             st.subheader("Phase à Élimination Directe")
             
-            # Affichage des résultats par tour
-            rounds = ["Huitièmes de Finale", "Quarts de Finale", "Demi-Finales", "Finale"]
+            # Affichage du Bracket
+            st.markdown("### Tableau Final")
+            display_bracket(knockout_results)
             
-            for round_name in rounds:
-                round_matches = [m for m in knockout_results if m['Tour'] == round_name]
-                if round_matches:
-                    st.markdown(f"#### {round_name}")
-                    for match in round_matches:
-                        st.write(f"**{match['Match']}** ➡️ {match.get('Score', '')} (Vainqueur : **{match['Vainqueur']}**)")
+            # Affichage des résultats par tour (détails)
+            with st.expander("Voir les détails des matchs"):
+                rounds = ["Huitièmes de Finale", "Quarts de Finale", "Demi-Finales", "Finale"]
+                
+                for round_name in rounds:
+                    round_matches = [m for m in knockout_results if m['Tour'] == round_name]
+                    if round_matches:
+                        st.markdown(f"#### {round_name}")
+                        for match in round_matches:
+                            st.write(f"**{match['Match']}** ➡️ {match.get('Score', '')} (Vainqueur : **{match['Vainqueur']}**)")
             
             # Vainqueur Final
             final_winner = knockout_results[-1]['Vainqueur']

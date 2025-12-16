@@ -210,41 +210,44 @@ def simulate_group_phase(model, current_elo_ratings, mean_points):
         '2F': df_standings[df_standings['Group'] == 'F'].iloc[1]['team'],
     }
     
-    # Identifier les groupes des 4 meilleurs troisièmes (important pour l'appariement)
-    best_thirds = list(third_place['Group'])
+    # 3.5. Déterminer l'appariement des 3e place (Logique officielle CAF/FIFA)
     
-    # 3.5. Déterminer l'appariement des 3e place (Utilisation d'un mapping pour la R16)
-    # Ce mapping assure que les équipes du même groupe ne se rencontrent pas immédiatement.
-    # Ex: Si les qualifiés sont ABCD, l'appariement est 1B vs 3A, 1C vs 3D, 1E vs 3B, 1A vs 3C (ou E)
+    # Récupérer les groupes des 4 meilleurs troisièmes
+    best_thirds_groups = sorted(list(third_place['Group']))
+    best_thirds_key = "".join(best_thirds_groups)
     
-    # Pour la simulation, nous allons ordonner les 3e place de 1 à 4 pour un des scénarios de la CAF.
-    # L'ordre est A, B, C, D, E, F pour les groupes.
+    # Dictionnaire pour retrouver l'équipe 3ème à partir de son groupe
+    group_to_third_team = dict(zip(third_place['Group'], third_place['team']))
     
-    # Scénarios possibles basés sur les combinaisons des groupes des 4 meilleurs troisièmes:
-    # Par exemple, si les troisièmes viennent des groupes A, B, C, D:
-    # 1B vs 3A | 1C vs 3D | 1A vs 3C | 1D vs 3B 
+    # Table de correspondance (Combinations -> Adversaires pour 1A, 1B, 1C, 1D)
+    # Format: { '1A': 'Groupe3e', '1B': 'Groupe3e', ... }
+    mapping_table = {
+        "ABCD": {"1A": "C", "1B": "D", "1C": "A", "1D": "B"},
+        "ABCE": {"1A": "C", "1B": "A", "1C": "B", "1D": "E"},
+        "ABCF": {"1A": "C", "1B": "A", "1C": "B", "1D": "F"},
+        "ABDE": {"1A": "D", "1B": "A", "1C": "B", "1D": "E"},
+        "ABDF": {"1A": "D", "1B": "A", "1C": "B", "1D": "F"},
+        "ABEF": {"1A": "E", "1B": "A", "1C": "B", "1D": "F"},
+        "ACDE": {"1A": "C", "1B": "D", "1C": "A", "1D": "E"},
+        "ACDF": {"1A": "C", "1B": "D", "1C": "A", "1D": "F"},
+        "ACEF": {"1A": "C", "1B": "A", "1C": "F", "1D": "E"},
+        "ADEF": {"1A": "D", "1B": "A", "1C": "F", "1D": "E"},
+        "BCDE": {"1A": "C", "1B": "D", "1C": "B", "1D": "E"},
+        "BCDF": {"1A": "C", "1B": "D", "1C": "B", "1D": "F"},
+        "BCEF": {"1A": "E", "1B": "C", "1C": "B", "1D": "F"},
+        "BDEF": {"1A": "E", "1B": "D", "1C": "B", "1D": "F"},
+        "CDEF": {"1A": "C", "1B": "D", "1C": "F", "1D": "E"},
+    }
     
-    # Pour garantir que le script fonctionne toujours, nous allons utiliser une assignation simplifiée 
-    # des 4 équipes 3e place (T1, T2, T3, T4) aux quatre matchs désignés pour elles (Matches 5 à 8).
+    # Récupérer le mapping correct, ou un par défaut si cas improbable (ex: < 4 troisièmes)
+    current_mapping = mapping_table.get(best_thirds_key, {"1A": "C", "1B": "D", "1C": "A", "1D": "B"})
     
-    third_teams = list(third_place['team'])
-    
-    # On va simuler l'une des permutations possibles pour l'appariement R16 (basée sur une grille type CAN)
-    
-    # Les 8 matches de la R16 (appariement classique sans rencontre inter-groupe 1er/2e)
-    
-    # M1: 1C vs 3(A/B/D/E) - On prend T1 (Meilleur 3e)
-    # M2: 1A vs 3(C/D/E/F) - On prend T2
-    # M3: 1B vs 3(A/C/D/F) - On prend T3
-    # M4: 1F vs 2E
-    # M5: 2A vs 2C
-    # M6: 1D vs 3(B/C/E/F) - On prend T4
-    # M7: 1E vs 2D
-    # M8: 2B vs 2F
-    
-    
-    # Mise en place de l'appariement R16 pour la simulation:
-    
+    # Définir les adversaires 3èmes
+    T_vs_1A = group_to_third_team.get(current_mapping.get("1A"), "Bye")
+    T_vs_1B = group_to_third_team.get(current_mapping.get("1B"), "Bye")
+    T_vs_1C = group_to_third_team.get(current_mapping.get("1C"), "Bye")
+    T_vs_1D = group_to_third_team.get(current_mapping.get("1D"), "Bye")
+
     # Équipes de position 1 et 2 (12 équipes)
     P1A, P2A = qualifiers['1A'], qualifiers['2A']
     P1B, P2B = qualifiers['1B'], qualifiers['2B']
@@ -253,32 +256,33 @@ def simulate_group_phase(model, current_elo_ratings, mean_points):
     P1E, P2E = qualifiers['1E'], qualifiers['2E']
     P1F, P2F = qualifiers['1F'], qualifiers['2F']
 
-    # Équipes de position 3 (4 équipes)
-    T1 = third_teams[0] if len(third_teams) > 0 else "Bye"
-    T2 = third_teams[1] if len(third_teams) > 1 else "Bye"
-    T3 = third_teams[2] if len(third_teams) > 2 else "Bye"
-    T4 = third_teams[3] if len(third_teams) > 3 else "Bye"
+    # Construction du Bracket (Structure standard CAN/Euro 24 équipes)
+    # On structure pour que simulate_knockout prenne (Match 1, Match 2) pour faire QF1, etc.
     
-    # Utilisons un appariement basé sur la permutation BCFE (la plus commune si A et D sont troisièmes)
-    # Ici, nous simplifions l'appariement des 3e place pour éviter les rencontres de groupe.
+    # QF1 : Vainqueur (2A vs 2C) vs Vainqueur (1D vs 3BEF)
+    m1 = (P2A, P2C)
+    m2 = (P1D, T_vs_1D)
     
-    r16_matchs_structured = [
-        (P1A, T1), # 1er A vs Meilleur 3e T1
-        (P1B, P2A), # 1er B vs 2e A
-        (P1C, T2), # 1er C vs 3e T2
-        (P1D, P2B), # 1er D vs 2e B
-        (P1E, T3), # 1er E vs 3e T3
-        (P1F, P2C), # 1er F vs 2e C
-        (P2D, P2E), # 2e D vs 2e E
-        (P2F, T4), # 2e F vs 3e T4
-    ]
+    # QF2 : Vainqueur (1B vs 3ACD) vs Vainqueur (1F vs 2E)
+    m3 = (P1B, T_vs_1B)
+    m4 = (P1F, P2E)
+    
+    # QF3 : Vainqueur (1A vs 3CDE) vs Vainqueur (2B vs 2F)
+    m5 = (P1A, T_vs_1A)
+    m6 = (P2B, P2F)
+    
+    # QF4 : Vainqueur (1C vs 3ABF) vs Vainqueur (1E vs 2D)
+    m7 = (P1C, T_vs_1C)
+    m8 = (P1E, P2D)
+    
+    r16_matchs_structured = [m1, m2, m3, m4, m5, m6, m7, m8]
 
-    # Vérification simple pour s'assurer qu'un 1er ne rencontre pas son 2e
-    # (Déjà couvert par la logique ci-dessus)
-    
-    # La liste des 16 qualifiés est maintenant ordonnée par la logique du bracket
+    # Liste ordonnée pour l'affichage
     qualified_teams = [
-        P1A, T1, P1B, P2A, P1C, T2, P1D, P2B, P1E, T3, P1F, P2C, P2D, P2E, P2F, T4
+        m1[0], m1[1], m2[0], m2[1], 
+        m3[0], m3[1], m4[0], m4[1], 
+        m5[0], m5[1], m6[0], m6[1], 
+        m7[0], m7[1], m8[0], m8[1]
     ]
 
     return df_standings, qualified_teams, r16_matchs_structured
@@ -308,19 +312,47 @@ def simulate_knockout(r16_matchs_structured, model, current_elo_ratings, mean_po
             else:
                 winner, proba, score_A, score_B = predict_match_result(model, team_A, team_B, current_elo_ratings, mean_points, is_neutral=1)
                 
-                # Gestion du match nul en KO (victoire du favori ELO)
+                method = ""
+
+                # Gestion du match nul en KO
                 if winner == "Draw":
-                    X_features = prepare_match_features(team_A, team_B, current_elo_ratings, mean_points, is_neutral=1)
-                    proba_solo = model.predict_proba(X_features)[0] 
-                    
-                    if proba_solo[2] > proba_solo[0]: 
-                        winner = team_A
-                    elif proba_solo[0] > proba_solo[2]:
-                        winner = team_B
-                    else: 
-                        winner = random.choice([team_A, team_B])
-                    
-                    print(f"  {team_A} vs {team_B} -> {score_A}-{score_B} (Vainqueur aux t.a.b: {winner})")
+                    # Simulation Prolongation (30% de chance de but)
+                    if random.random() < 0.3:
+                        # But en prolongation pour l'équipe la plus forte (ELO)
+                        X_features = prepare_match_features(team_A, team_B, current_elo_ratings, mean_points, is_neutral=1)
+                        proba_solo = model.predict_proba(X_features)[0]
+                        
+                        if proba_solo[2] > proba_solo[0]: # Avantage A
+                             winner = team_A
+                             score_A += 1
+                        elif proba_solo[0] > proba_solo[2]: # Avantage B
+                             winner = team_B
+                             score_B += 1
+                        else:
+                             if random.random() > 0.5:
+                                 winner = team_A
+                                 score_A += 1
+                             else:
+                                 winner = team_B
+                                 score_B += 1
+                        
+                        method = " (a.p.)"
+                        print(f"  {team_A} vs {team_B} -> {score_A}-{score_B}{method} (Vainqueur: {winner})")
+
+                    else:
+                        # Toujours nul -> Tirs au but
+                        X_features = prepare_match_features(team_A, team_B, current_elo_ratings, mean_points, is_neutral=1)
+                        proba_solo = model.predict_proba(X_features)[0] 
+                        
+                        if proba_solo[2] > proba_solo[0]: 
+                            winner = team_A
+                        elif proba_solo[0] > proba_solo[2]:
+                            winner = team_B
+                        else: 
+                            winner = random.choice([team_A, team_B])
+                        
+                        method = " (t.a.b)"
+                        print(f"  {team_A} vs {team_B} -> {score_A}-{score_B}{method} (Vainqueur: {winner})")
                 else:
                     print(f"  {team_A} vs {team_B} -> {score_A}-{score_B} (Vainqueur: {winner})")
             
@@ -328,7 +360,7 @@ def simulate_knockout(r16_matchs_structured, model, current_elo_ratings, mean_po
                 'Tour': round_name,
                 'Match': f'{team_A} vs {team_B}',
                 'Vainqueur': winner,
-                'Score': f"{score_A}-{score_B}"
+                'Score': f"{score_A}-{score_B}{method}"
             })
             
             next_round_teams.append(winner)
